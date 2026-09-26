@@ -1,0 +1,231 @@
+// Arya — small business inventory, sales & insights platform
+// Money is stored as integer paise (1 INR = 100 paise) everywhere to keep
+// arithmetic exact. Never introduce a Decimal/float money field — convert
+// at the UI boundary only (see src/lib/money.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  STAFF
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  sku              String   @unique
+  name             String
+  category         String?
+  unit             String   @default("pc")
+  costPricePaise   Int // last-known cost, refreshed on each purchase
+  sellingPricePaise Int
+  reorderPoint     Int      @default(0)
+  stockQty         Int      @default(0) // denormalized; kept in sync with StockLedgerEntry in the same DB transaction
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+  ledgerEntries StockLedgerEntry[]
+
+  @@index([category])
+  @@index([isActive])
+  @@index([name])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales Sale[]
+
+  @@index([isActive])
+  @@index([name])
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases Purchase[]
+
+  @@index([isActive])
+  @@index([name])
+}
+
+enum PaymentStatus {
+  PAID
+  PARTIAL
+  UNPAID
+}
+
+model Sale {
+  id                String        @id @default(cuid())
+  invoiceNo         String        @unique
+  customerId        String?
+  customer          Customer?     @relation(fields: [customerId], references: [id])
+  saleDate          DateTime      @default(now())
+  subtotalPaise     Int
+  discountPaise     Int           @default(0)
+  totalPaise        Int
+  amountPaidPaise   Int           @default(0)
+  paymentStatus     PaymentStatus @default(PAID)
+  notes             String?
+  voidedAt          DateTime?
+  voidedReason      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  items SaleItem[]
+
+  @@index([saleDate])
+  @@index([customerId])
+}
+
+model SaleItem {
+  id             String  @id @default(cuid())
+  saleId         String
+  sale           Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product @relation(fields: [productId], references: [id])
+  quantity       Int
+  unitPricePaise Int // price charged at time of sale
+  unitCostPaise  Int // COGS snapshot at time of sale — never recomputed retroactively
+  lineTotalPaise Int
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+model Purchase {
+  id             String        @id @default(cuid())
+  billNo         String?
+  supplierId     String?
+  supplier       Supplier?     @relation(fields: [supplierId], references: [id])
+  purchaseDate   DateTime      @default(now())
+  subtotalPaise  Int
+  totalPaise     Int
+  amountPaidPaise Int          @default(0)
+  paymentStatus  PaymentStatus @default(PAID)
+  notes          String?
+  voidedAt       DateTime?
+  voidedReason   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items PurchaseItem[]
+
+  @@index([purchaseDate])
+  @@index([supplierId])
+}
+
+model PurchaseItem {
+  id             String   @id @default(cuid())
+  purchaseId     String
+  purchase       Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  quantity       Int
+  unitCostPaise  Int
+  lineTotalPaise Int
+
+  @@index([purchaseId])
+  @@index([productId])
+}
+
+enum LedgerRefType {
+  SALE
+  PURCHASE
+  ADJUSTMENT
+  RETURN_SALE
+  RETURN_PURCHASE
+}
+
+// Append-only. Every stock movement is written here in the same transaction
+// that updates Product.stockQty — this table is the audit trail that lets
+// reconciliation prove stockQty is correct.
+model StockLedgerEntry {
+  id             String        @id @default(cuid())
+  productId      String
+  product        Product       @relation(fields: [productId], references: [id])
+  quantityDelta  Int // positive = stock in, negative = stock out
+  balanceAfter   Int
+  unitCostPaise  Int?
+  refType        LedgerRefType
+  refId          String?
+  note           String?
+  createdAt      DateTime      @default(now())
+
+  @@index([productId, createdAt])
+  @@index([refType, refId])
+}
+
+// Atomic named counters (e.g. "sale-invoice") — incremented via a single
+// row-level UPDATE so concurrent transactions never get the same sequence
+// number without needing application-level locking.
+model Counter {
+  name  String @id
+  value Int    @default(0)
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String
+  amountPaise Int
+  date        DateTime @default(now())
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+  @@index([category])
+}
+
+// Cached AI-generated narrative insights, keyed by a hash of the numeric
+// payload that grounded them — see src/lib/ai/README for the no-arithmetic
+// contract these responses must satisfy.
+model InsightCache {
+  id          String   @id @default(cuid())
+  cacheKey    String   @unique
+  feature     String
+  payloadHash String
+  response    Json
+  model       String
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([feature])
+  @@index([expiresAt])
+}

@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #faf8f4;
+  --surface: #ffffff;
+  --surface-muted: #f2eee6;
+  --ink: #211d18;
+  --ink-muted: #746c60;
+  --border: #e7e1d6;
+
+  --accent: #c2410c;
+  --accent-hover: #9a3412;
+  --accent-foreground: #fff7ed;
+  --accent-soft: #ffedd5;
+
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+  --warning: #a16207;
+  --warning-soft: #fef9c3;
+
+  /* Chart categorical series — validated pair (blue/aqua), see dataviz skill */
+  --chart-revenue: #2a78d6;
+  --chart-profit: #1baf7a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14120f;
+    --surface: #1d1a15;
+    --surface-muted: #262019;
+    --ink: #f3efe7;
+    --ink-muted: #b3aa9c;
+    --border: #332c22;
+
+    --accent: #fb923c;
+    --accent-hover: #fdba74;
+    --accent-foreground: #1c1206;
+    --accent-soft: #431407;
+
+    --success: #4ade80;
+    --success-soft: #14532d;
+    --danger: #f87171;
+    --danger-soft: #450a0a;
+    --warning: #facc15;
+    --warning-soft: #422006;
+
+    --chart-revenue: #3987e5;
+    --chart-profit: #199e70;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-border: var(--border);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --color-chart-revenue: var(--chart-revenue);
+  --color-chart-profit: var(--chart-profit);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
