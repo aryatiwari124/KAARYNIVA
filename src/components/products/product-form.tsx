@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
+import { useDemoGuard } from "@/components/auth/demo-guard";
 
 export interface ProductFormValues {
   sku: string;
@@ -34,6 +35,7 @@ export function ProductForm({
   onSubmit: (values: ProductFormValues) => Promise<string | null>;
   submitLabel: string;
 }) {
+  const { requireLogin } = useDemoGuard();
   const [values, setValues] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,7 @@ export function ProductForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (requireLogin("Adding or editing products requires a registered user account.")) return;
     setError(null);
     setLoading(true);
     const errorMessage = await onSubmit(values);

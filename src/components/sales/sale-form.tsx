@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatPaise, paiseToRupees } from "@/lib/money";
+import { useDemoGuard } from "@/components/auth/demo-guard";
 
 export interface ProductOption {
   id: string;
@@ -44,6 +45,7 @@ export function SaleForm({
   role: Role;
 }) {
   const router = useRouter();
+  const { requireLogin } = useDemoGuard();
   const [lines, setLines] = useState<LineItem[]>([emptyLine()]);
   const [customerId, setCustomerId] = useState("");
   const [saleDate, setSaleDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -88,6 +90,7 @@ export function SaleForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (requireLogin("Recording a sale requires a registered user account.")) return;
     setError(null);
 
     const items = lines

@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useDemoGuard } from "@/components/auth/demo-guard";
 
 export interface UserFormValues {
   name: string;
@@ -20,6 +21,7 @@ export function UserForm({
 }: {
   onSubmit: (values: UserFormValues) => Promise<string | null>;
 }) {
+  const { requireLogin } = useDemoGuard();
   const [values, setValues] = useState<UserFormValues>(emptyUserForm);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,7 @@ export function UserForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (requireLogin("Creating user accounts requires a registered user account.")) return;
     setError(null);
     setLoading(true);
     const errorMessage = await onSubmit(values);

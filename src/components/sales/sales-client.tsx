@@ -16,6 +16,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { formatPaise } from "@/lib/money";
+import { useDemoGuard } from "@/components/auth/demo-guard";
 
 export interface SaleRow {
   id: string;
@@ -37,8 +38,10 @@ const paymentTone = {
 export function SalesClient({ initialSales, role }: { initialSales: SaleRow[]; role: Role }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const { requireLogin } = useDemoGuard();
 
   async function handleVoid(id: string) {
+    if (requireLogin("Voiding a sale requires a registered user account.")) return;
     const reason = prompt("Reason for voiding this sale (optional):") ?? undefined;
     if (reason === undefined) return; // cancelled
     const res = await fetch(`/api/sales/${id}/void`, {

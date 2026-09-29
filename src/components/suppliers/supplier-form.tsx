@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
+import { useDemoGuard } from "@/components/auth/demo-guard";
 
 export interface SupplierFormValues {
   name: string;
@@ -30,6 +31,7 @@ export function SupplierForm({
   onSubmit: (values: SupplierFormValues) => Promise<string | null>;
   submitLabel: string;
 }) {
+  const { requireLogin } = useDemoGuard();
   const [values, setValues] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,7 @@ export function SupplierForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (requireLogin("Adding or editing suppliers requires a registered user account.")) return;
     setError(null);
     setLoading(true);
     const errorMessage = await onSubmit(values);

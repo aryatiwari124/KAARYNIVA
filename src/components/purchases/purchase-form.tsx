@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatPaise, paiseToRupees } from "@/lib/money";
+import { useDemoGuard } from "@/components/auth/demo-guard";
 
 export interface ProductOption {
   id: string;
@@ -41,6 +42,7 @@ export function PurchaseForm({
   suppliers: SupplierOption[];
 }) {
   const router = useRouter();
+  const { requireLogin } = useDemoGuard();
   const [lines, setLines] = useState<LineItem[]>([emptyLine()]);
   const [supplierId, setSupplierId] = useState("");
   const [billNo, setBillNo] = useState("");
@@ -83,6 +85,7 @@ export function PurchaseForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (requireLogin("Recording a purchase requires a registered user account.")) return;
     setError(null);
 
     const items = lines

@@ -16,6 +16,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { formatPaise } from "@/lib/money";
+import { useDemoGuard } from "@/components/auth/demo-guard";
 
 export interface PurchaseRow {
   id: string;
@@ -43,8 +44,10 @@ export function PurchasesClient({
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const { requireLogin } = useDemoGuard();
 
   async function handleVoid(id: string) {
+    if (requireLogin("Voiding a purchase requires a registered user account.")) return;
     const reason = prompt("Reason for voiding this purchase (optional):") ?? undefined;
     if (reason === undefined) return; // cancelled
     const res = await fetch(`/api/purchases/${id}/void`, {
