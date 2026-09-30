@@ -11,6 +11,7 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
@@ -28,6 +29,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isStaffDemo = email === "staff@arya.test";
         const isDemoEmail = isOwnerDemo || isStaffDemo;
 
+        // Instant response for demo accounts (zero DB latency or connection issues)
+        if (isDemoEmail && password === "password123") {
+          return {
+            id: isOwnerDemo ? "demo-owner-id" : "demo-staff-id",
+            name: isOwnerDemo ? "Demo Owner" : "Demo Staff",
+            email,
+            role: isOwnerDemo ? "OWNER" : "STAFF",
+            isDemo: true,
+          };
+        }
+
         try {
           const user = await prisma.user.findUnique({ where: { email } });
           if (user && user.isActive) {
@@ -38,23 +50,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isDemo: isDemoEmail,
+                isDemo: false,
               };
             }
           }
         } catch (err) {
           console.error("Auth DB query error:", err);
-        }
-
-        // Resilient fallback for demo logins (e.g. if remote DB is unseeded)
-        if (isDemoEmail && password === "password123") {
-          return {
-            id: isOwnerDemo ? "demo-owner-id" : "demo-staff-id",
-            name: isOwnerDemo ? "Demo Owner" : "Demo Staff",
-            email,
-            role: isOwnerDemo ? "OWNER" : "STAFF",
-            isDemo: true,
-          };
         }
 
         return null;
