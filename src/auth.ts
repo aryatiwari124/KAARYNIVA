@@ -67,14 +67,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id as string;
         token.role = user.role;
-        token.isDemo = user.isDemo ?? false;
+        token.isDemo = Boolean(user.isDemo);
       }
       return token;
     },
     session({ session, token }) {
       session.user.id = token.id as string;
       session.user.role = token.role as Role;
-      session.user.isDemo = token.isDemo ?? false;
+      session.user.isDemo = Boolean(token.isDemo);
       return session;
     },
   },
