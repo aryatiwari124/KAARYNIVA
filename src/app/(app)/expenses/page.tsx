@@ -4,7 +4,12 @@ import { ExpensesClient } from "@/components/expenses/expenses-client";
 
 export default async function ExpensesPage() {
   const session = await auth();
-  const expenses = await prisma.expense.findMany({ orderBy: { date: "desc" } });
+  let expenses: any[] = [];
+  try {
+    expenses = await prisma.expense.findMany({ orderBy: { date: "desc" } });
+  } catch (err) {
+    console.error("Expenses DB query error:", err);
+  }
 
   return (
     <ExpensesClient

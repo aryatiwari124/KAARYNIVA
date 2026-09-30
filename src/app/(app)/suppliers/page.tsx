@@ -4,10 +4,15 @@ import { SuppliersClient } from "@/components/suppliers/suppliers-client";
 
 export default async function SuppliersPage() {
   const session = await auth();
-  const suppliers = await prisma.supplier.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-  });
+  let suppliers: any[] = [];
+  try {
+    suppliers = await prisma.supplier.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+    });
+  } catch (err) {
+    console.error("Suppliers DB query error:", err);
+  }
 
   return (
     <SuppliersClient

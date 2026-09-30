@@ -12,10 +12,15 @@ export default async function SettingsPage() {
     redirect("/");
   }
 
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, email: true, role: true, isActive: true },
-  });
+  let users: any[] = [];
+  try {
+    users = await prisma.user.findMany({
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, email: true, role: true, isActive: true },
+    });
+  } catch (err) {
+    console.error("Settings DB query error:", err);
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">

@@ -1,10 +1,25 @@
 import { getAllProductForecasts } from "@/lib/forecast";
 import { RestockTable } from "@/components/restock/restock-table";
-import { InsightCard } from "@/components/insights/insight-card";
+import { InsightCard, type InsightCardProps } from "@/components/insights/insight-card";
 import { getRestockInsight } from "@/lib/ai/insights/restock";
 
 export default async function RestockPage() {
-  const [forecasts, restockInsight] = await Promise.all([getAllProductForecasts(), getRestockInsight()]);
+  let forecasts: any[] = [];
+  let restockInsight: InsightCardProps = {
+    headline: "Stock Optimization",
+    body: "Inventory forecasting blends sales velocity, trend, and seasonal patterns.",
+    citedFigures: [],
+    severity: "info",
+    source: "deterministic",
+  };
+
+  try {
+    const [f, insight] = await Promise.all([getAllProductForecasts(), getRestockInsight()]);
+    forecasts = f;
+    restockInsight = insight;
+  } catch (err) {
+    console.error("Restock DB query error:", err);
+  }
   forecasts.sort((a, b) => {
     const da = a.stockout.daysUntilStockout;
     const db = b.stockout.daysUntilStockout;

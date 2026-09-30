@@ -2,10 +2,18 @@ import { prisma } from "@/lib/prisma";
 import { PurchaseForm } from "@/components/purchases/purchase-form";
 
 export default async function NewPurchasePage() {
-  const [products, suppliers] = await Promise.all([
-    prisma.product.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.supplier.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-  ]);
+  let products: any[] = [];
+  let suppliers: any[] = [];
+  try {
+    const [p, s] = await Promise.all([
+      prisma.product.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+      prisma.supplier.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    ]);
+    products = p;
+    suppliers = s;
+  } catch (err) {
+    console.error("NewPurchase DB query error:", err);
+  }
 
   return (
     <div className="space-y-6">

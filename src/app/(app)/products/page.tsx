@@ -4,10 +4,15 @@ import { ProductsClient } from "@/components/products/products-client";
 
 export default async function ProductsPage() {
   const session = await auth();
-  const products = await prisma.product.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-  });
+  let products: any[] = [];
+  try {
+    products = await prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+    });
+  } catch (err) {
+    console.error("Products DB query error:", err);
+  }
 
   return (
     <ProductsClient
